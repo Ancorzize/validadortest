@@ -124,14 +124,13 @@
           clearInterval(interval);
           progressBar.style.width = "100%";
           
-          if (data.reportFile) {
-            console.log('argando reporte: '); console.log(data.reportFile);
+          if (data.success && data.reportFile) {
+            console.log("Cargando reporte:", data.reportFile);
             reportFrame.src = "/report?file=" + encodeURIComponent(data.reportFile) + "&t=" + Date.now();
           } else {
-            console.log("No vino reportFile");
-            alert("No se pudo generar el reporte.");
+            console.log("No se generó un reporte nuevo:", data);
+            alert(data.message || "No se pudo ejecutar la prueba correctamente.");
           }
-
           if (!data.success) {
             console.log("Las pruebas terminaron con errores.");
           }

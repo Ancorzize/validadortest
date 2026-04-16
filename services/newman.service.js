@@ -13,11 +13,14 @@ function executeTests(selectedTests = []) {
     const reportPath = path.join(config.reportsDir, reportFile);
     const customStylePath = path.join(__dirname, "../public/css/report.css");
 
+    const newmanBin = path.join(process.cwd(), "node_modules", ".bin", "newman");
+
     console.log("process.cwd():", process.cwd());
     console.log("config.collectionPath:", config.collectionPath);
     console.log("config.reportsDir:", config.reportsDir);
     console.log("reportPath:", reportPath);
     console.log("customStylePath:", customStylePath);
+    console.log("newmanBin:", newmanBin);
 
     try {
       if (!fs.existsSync(config.collectionPath)) {
@@ -33,18 +36,9 @@ function executeTests(selectedTests = []) {
       console.log("¿Existe colección?:", fs.existsSync(config.collectionPath));
       console.log("¿Existe reportsDir?:", fs.existsSync(config.reportsDir));
       console.log("¿Existe customStylePath?:", fs.existsSync(customStylePath));
-
-      if (fs.existsSync(reportPath)) {
-        const stats = fs.statSync(reportPath);
-        console.log("Ya existía latest-report.html antes de ejecutar.");
-        console.log("Última modificación previa:", stats.mtime.toISOString());
-        console.log("Tamaño previo:", stats.size, "bytes");
-      } else {
-        console.log("No existía latest-report.html antes de ejecutar.");
-      }
+      console.log("¿Existe newmanBin?:", fs.existsSync(newmanBin));
 
       const args = [
-        "newman",
         "run",
         config.collectionPath,
         "-r",
@@ -60,9 +54,9 @@ function executeTests(selectedTests = []) {
       });
 
       console.log("Comando a ejecutar:");
-      console.log("npx " + args.join(" "));
+      console.log(newmanBin + " " + args.join(" "));
 
-      const child = spawn("npx", args, { shell: true });
+      const child = spawn(newmanBin, args, { shell: false });
 
       child.stdout.on("data", d => {
         console.log("STDOUT:", d.toString());
@@ -76,21 +70,24 @@ function executeTests(selectedTests = []) {
         console.log("========== child close ==========");
         console.log("Newman terminó con código:", code);
 
+        if (code !== 0) {
+          return resolve({
+            success: false,
+            code,
+            reportFile: null,
+            message: "La ejecución de Newman falló"
+          });
+        }
+
         const reportExists = fs.existsSync(reportPath);
         console.log("¿Existe reportPath después de ejecutar?:", reportExists);
 
-        if (reportExists) {
-          const stats = fs.statSync(reportPath);
-          console.log("Última modificación posterior:", stats.mtime.toISOString());
-          console.log("Tamaño posterior:", stats.size, "bytes");
-        }
-
         if (!reportExists) {
-          return reject(new Error("No se generó el reporte"));
+          return reject(new Error("Newman terminó pero no generó el reporte"));
         }
 
         resolve({
-          success: code === 0,
+          success: true,
           code,
           reportFile
         });

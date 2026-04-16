@@ -11,11 +11,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
+    "express": "^4.22.1",
     "newman": "^6.2.1"
   },
   "devDependencies": {
-    "newman-reporter-allure": "^3.4.1",
+    "newman-reporter-allure": "^3.7.1",
     "newman-reporter-htmlextra": "^1.23.1"
   }
 }

@@ -124,7 +124,7 @@
           clearInterval(interval);
           progressBar.style.width = "100%";
           
-          if (data.success && data.reportFile) {
+          if (data.reportFile) {
             console.log("Cargando reporte:", data.reportFile);
             reportFrame.src = "/report?file=" + encodeURIComponent(data.reportFile) + "&t=" + Date.now();
           } else {

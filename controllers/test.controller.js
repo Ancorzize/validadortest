@@ -7,38 +7,79 @@ const { executeTests } = require("../services/newman.service");
 const reportService = require("../services/report.service");
 
 async function renderMainPage(req, res) {
-  const testNames = collectionUtil.getTestNames();
-  const html = await collectionUtil.renderMainView(testNames);
-  res.send(html);
+  console.log("========== GET / ==========");
+  try {
+    const testNames = collectionUtil.getTestNames();
+    console.log("Tests encontrados para renderizar:", testNames);
+
+    const html = await collectionUtil.renderMainView(testNames);
+    res.send(html);
+  } catch (err) {
+    console.error("ERROR en renderMainPage:");
+    console.error(err);
+    console.error(err.stack);
+    res.status(500).send("Error cargando la página principal");
+  }
 }
 
 async function runTests(req, res) {
-  const selectedTests = req.body.tests || [];
+  console.log("========== POST /run-tests ==========");
+  console.log("Fecha:", new Date().toISOString());
+  console.log("Body recibido:", JSON.stringify(req.body, null, 2));
+
+  let selectedTests = Array.isArray(req.body.tests) ? [...req.body.tests] : [];
+
+  console.log("selectedTests inicial:", selectedTests);
 
   if (!selectedTests.includes("IniciarSesion")) {
     selectedTests.unshift("IniciarSesion");
   }
 
+  console.log("selectedTests final:", selectedTests);
+
   try {
     const result = await executeTests(selectedTests);
+    console.log("Resultado executeTests:", JSON.stringify(result, null, 2));
     res.json(result);
   } catch (err) {
+    console.error("ERROR en runTests:");
     console.error(err);
-    res.status(500).json({ error: "Error ejecutando pruebas" });
+    if (err && err.stack) {
+      console.error(err.stack);
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Error ejecutando pruebas",
+      message: err.message || String(err),
+      reportFile: null
+    });
   }
 }
 
 function getReport(req, res) {
+  console.log("========== GET /report ==========");
   const file = req.query.file;
-  const reportPath = reportService.getReportPath(file);
+  console.log("Archivo solicitado:", file);
 
-  if (!reportService.exists(reportPath)) {
+  const reportPath = reportService.getReportPath(file);
+  console.log("Ruta de reporte resuelta:", reportPath);
+
+  const exists = reportService.exists(reportPath);
+  console.log("¿Existe reporte?:", exists);
+
+  if (!exists) {
+    console.log("Reporte no encontrado");
     return res.status(404).send("Reporte no encontrado");
   }
+
+  console.log("Enviando reporte:", reportPath);
   res.sendFile(reportPath);
 }
 
 function getHistory(req, res) {
+  console.log("========== GET /history ==========");
+  console.log("reportsDir:", config.reportsDir);
 
   let reports = [];
 
@@ -52,10 +93,13 @@ function getHistory(req, res) {
     });
   }
 
+  console.log("Reportes encontrados:", reports);
+
   const templatePath = path.join(__dirname, "../public/views/history.html");
+  console.log("templatePath:", templatePath);
 
   if (!fs.existsSync(templatePath)) {
-
+    console.log("No se encontró history.html");
     return res.send("ERROR: No se encontró history.html");
   }
 

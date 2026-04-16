@@ -120,12 +120,15 @@
       })
         .then(res => res.json())
         .then(data => {
+          console.log("Respuesta completa del backend:", data);
           clearInterval(interval);
           progressBar.style.width = "100%";
-          console.log('data: '); console.log(data.reportFile);
+          
           if (data.reportFile) {
+            console.log('argando reporte: '); console.log(data.reportFile);
             reportFrame.src = "/report?file=" + encodeURIComponent(data.reportFile) + "&t=" + Date.now();
           } else {
+            console.log("No vino reportFile");
             alert("No se pudo generar el reporte.");
           }
 
@@ -135,6 +138,7 @@
         })
         .catch(err => {
           clearInterval(interval);
+          console.error("Error en fetch /run-tests:", err);
           alert("Error ejecutando pruebas: " + err);
         })
         .finally(() => {

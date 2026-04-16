@@ -13,14 +13,16 @@ function executeTests(selectedTests = []) {
     const reportPath = path.join(config.reportsDir, reportFile);
     const customStylePath = path.join(__dirname, "../public/css/report.css");
 
-    const newmanBin = path.join(process.cwd(), "node_modules", ".bin", "newman");
+    const nodeBin = process.execPath;
+    const newmanCli = require.resolve("newman/bin/newman.js");
 
     console.log("process.cwd():", process.cwd());
+    console.log("nodeBin:", nodeBin);
+    console.log("newmanCli:", newmanCli);
     console.log("config.collectionPath:", config.collectionPath);
     console.log("config.reportsDir:", config.reportsDir);
     console.log("reportPath:", reportPath);
     console.log("customStylePath:", customStylePath);
-    console.log("newmanBin:", newmanBin);
 
     try {
       if (!fs.existsSync(config.collectionPath)) {
@@ -36,9 +38,10 @@ function executeTests(selectedTests = []) {
       console.log("¿Existe colección?:", fs.existsSync(config.collectionPath));
       console.log("¿Existe reportsDir?:", fs.existsSync(config.reportsDir));
       console.log("¿Existe customStylePath?:", fs.existsSync(customStylePath));
-      console.log("¿Existe newmanBin?:", fs.existsSync(newmanBin));
+      console.log("¿Existe newmanCli?:", fs.existsSync(newmanCli));
 
       const args = [
+        newmanCli,
         "run",
         config.collectionPath,
         "-r",
@@ -54,9 +57,9 @@ function executeTests(selectedTests = []) {
       });
 
       console.log("Comando a ejecutar:");
-      console.log(newmanBin + " " + args.join(" "));
+      console.log(nodeBin + " " + args.join(" "));
 
-      const child = spawn(newmanBin, args, { shell: false });
+      const child = spawn(nodeBin, args, { shell: false });
 
       child.stdout.on("data", d => {
         console.log("STDOUT:", d.toString());

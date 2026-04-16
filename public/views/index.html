@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ejecutor de Pruebas Automáticas</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Seleccionar pruebas</h2>
+    <p class="subtitle">Elige una o varias pruebas para ejecutar el validador.</p>
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Buscar prueba..."
+      class="search-box"
+    />
+
+    <button type="button" id="toggleSelectBtn" class="btn btn-secondary">
+      Seleccionar todo
+    </button>
+
+    <form id="testForm">
+      <div id="testList">
+        {{tests}}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Ejecutar Pruebas</button>
+      <button type="button" class="btn btn-secondary" onclick="window.location.href='/history'">
+        Ver histórico
+      </button>
+    </form>
+
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="viewer-card">
+      <div class="viewer-header">Resultado de ejecución</div>
+      <iframe id="reportFrame" src=""></iframe>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("testForm");
+    const testList = document.getElementById("testList");
+    const searchInput = document.getElementById("searchInput");
+    const toggleSelectBtn = document.getElementById("toggleSelectBtn");
+    const progressContainer = document.getElementById("progressContainer");
+    const progressBar = document.getElementById("progressBar");
+    const reportFrame = document.getElementById("reportFrame");
+
+    const btnRun = form.querySelector("button[type='submit']");
+    const btnHistory = form.querySelector("button[type='button'][onclick]");
+
+    const sortTestsAlphabetically = () => {
+      const labels = Array.from(testList.querySelectorAll("label"));
+      labels.sort((a, b) => a.textContent.localeCompare(b.textContent, "es"));
+      testList.innerHTML = "";
+      labels.forEach(l => testList.appendChild(l));
+    };
+    sortTestsAlphabetically();
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase();
+      testList.querySelectorAll("label").forEach(label => {
+        label.style.display = label.textContent.toLowerCase().includes(query)
+          ? "flex"
+          : "none";
+      });
+    });
+
+    let allSelected = false;
+    toggleSelectBtn.addEventListener("click", () => {
+      const checkboxes = testList.querySelectorAll("input[type=checkbox]");
+      allSelected = !allSelected;
+      checkboxes.forEach(cb => {
+        if (cb.offsetParent !== null) cb.checked = allSelected;
+      });
+      toggleSelectBtn.textContent = allSelected ? "Deseleccionar todo" : "Seleccionar todo";
+    });
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const selected = Array.from(
+        form.querySelectorAll("input[name=tests]:checked")
+      ).map(cb => cb.value);
+
+      if (selected.length === 0) {
+        alert("Selecciona al menos una prueba.");
+        return;
+      }
+
+      btnRun.disabled = true;
+      btnRun.textContent = "Ejecutando...";
+      btnHistory.disabled = true;
+
+      progressBar.style.width = "0%";
+      progressContainer.style.display = "block";
+      reportFrame.src = "";
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        if (progress < 90) {
+          progress += 10;
+          progressBar.style.width = progress + "%";
+        }
+      }, 400);
+
+      fetch("/run-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tests: selected })
+      })
+        .then(res => res.json())
+        .then(data => {
+          clearInterval(interval);
+          progressBar.style.width = "100%";
+          console.log('data: '); console.log(data.reportFile);
+          if (data.reportFile) {
+            reportFrame.src = "/report?file=" + encodeURIComponent(data.reportFile) + "&t=" + Date.now();
+          } else {
+            alert("No se pudo generar el reporte.");
+          }
+
+          if (!data.success) {
+            console.log("Las pruebas terminaron con errores.");
+          }
+        })
+        .catch(err => {
+          clearInterval(interval);
+          alert("Error ejecutando pruebas: " + err);
+        })
+        .finally(() => {
+          btnRun.disabled = false;
+          btnRun.textContent = "Ejecutar Pruebas";
+          btnHistory.disabled = false;
+        });
+    });
+  </script>
+
+</body>
+</html>

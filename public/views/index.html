@@ -39,6 +39,8 @@
     </div>
   </div>
 
+  <div id="toastContainer" class="toast-container"></div>
+
   <div class="content">
     <div class="viewer-card">
       <div class="viewer-header">Resultado de ejecución</div>
@@ -93,7 +95,7 @@
       ).map(cb => cb.value);
 
       if (selected.length === 0) {
-        alert("Selecciona al menos una prueba.");
+        showToast("Selecciona al menos una prueba.", "warning");
         return;
       }
 
@@ -122,11 +124,11 @@
         .then(data => {
           clearInterval(interval);
           progressBar.style.width = "100%";
-          
+        
           if (data.reportFile) {
             reportFrame.src = "/report?file=" + encodeURIComponent(data.reportFile) + "&t=" + Date.now();
           } else {
-            alert(data.message || "No se pudo ejecutar la prueba correctamente.");
+            showToast("No se pudo ejecutar la prueba correctamente.", "warning");
           }
         })
         .catch(err => {
@@ -138,6 +140,22 @@
           btnHistory.disabled = false;
         });
     });
+
+    function showToast(message, type = "info", duration = 4000) {
+      const container = document.getElementById("toastContainer");
+
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transition = "opacity 0.3s";
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
   </script>
 
 </body>

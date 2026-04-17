@@ -32,6 +32,8 @@ function executeTests(selectedTests = []) {
         reportPath,
         "--reporter-htmlextra-customStyle",
         customStylePath,
+        "--reporter-htmlextra-theme",
+        "default"
       ];
 
       selectedTests.forEach(test => {
